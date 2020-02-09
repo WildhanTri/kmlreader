@@ -1,0 +1,292 @@
+<html>
+
+<head>
+    <title>File kml detector</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+<style>
+    @import url(https://fonts.googleapis.com/css?family=Open+Sans:700,300);
+
+    .frame {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 400px;
+        height: 400px;
+        margin-top: -200px;
+        margin-left: -200px;
+        border-radius: 2px;
+        box-shadow: 4px 8px 16px 0 rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        background: linear-gradient(to top right, darkmagenta 0%, hotpink 100%);
+        color: #333;
+        font-family: "Open Sans", Helvetica, sans-serif;
+    }
+
+    .center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 300px;
+        height: 260px;
+        border-radius: 3px;
+        box-shadow: 8px 10px 15px 0 rgba(0, 0, 0, 0.2);
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: space-evenly;
+        flex-direction: column;
+    }
+
+    .title {
+        width: 100%;
+        height: 50px;
+        border-bottom: 1px solid #999;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 16px;
+        font-weight: 300;
+        color: #666;
+    }
+
+    .dropzone {
+        width: 100px;
+        height: 80px;
+        border: 1px dashed #999;
+        border-radius: 3px;
+        text-align: center;
+    }
+
+    .upload-icon {
+        margin: 25px 2px 2px 2px;
+    }
+
+    .upload-input {
+        position: relative;
+        top: -62px;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+    }
+
+    .btn {
+        display: block;
+        width: 140px;
+        height: 40px;
+        background: darkmagenta;
+        color: #fff;
+        border-radius: 3px;
+        border: 0;
+        box-shadow: 0 3px 0 0 hotpink;
+        transition: all 0.3s ease-in-out;
+        font-size: 14px;
+    }
+
+    .btn:hover {
+        background: rebeccapurple;
+        box-shadow: 0 3px 0 0 deeppink;
+    }
+</style>
+
+<body>
+    <div class="frame">
+        <div class="center">
+            <div class="title">
+                <h1>Drop file to upload</h1>
+            </div>
+
+            <div class="dropzone">
+                <img src="http://100dayscss.com/codepen/upload.svg" class="upload-icon" />
+                <input type="file" id="fileinput" class="upload-input" accept=".kml,.kmz" />
+            </div>
+
+            <button type="button" class="btn" name="uploadbutton">Upload file</button>
+
+        </div>
+    </div>
+    <!-- original pen: https://codepen.io/roydigerhund/pen/ZQdbeN  -->
+
+    <!-- NO JS ADDED YET -->
+</body>
+
+</html>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+    crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+    integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+    crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+    integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+    crossorigin="anonymous"></script>
+
+<script>
+    var file;
+    var uploadData;
+    var start = 0;
+    var end = 200;
+
+    $('#fileinput').change(function (e) {
+        console.log(e)
+        file = e.target.files[0]
+        parseDocument(file)
+    });
+    function fileChanged(e) {
+        console.log(e)
+        file = e.target.files[0]
+        parseDocument(file)
+    }
+    function parseDocument(file) {
+        let fileReader = new FileReader()
+        fileReader.onload = async (e) => {
+            let result = await extractGoogleCoords(e.target.result)
+
+            //Do something with result object here
+
+            console.log("Initiating Data...")
+            result.forEach(r => {
+                var latlngs = ""
+                var polygons = ""
+
+                polygons += "MULTIPOLYGON("
+                latlngs += "["
+
+                var latitude;
+                var longitude;
+
+                let index_rp = 0;
+                r.polygonArray.forEach(rp => {
+                    let index = 0;
+
+                    if (index_rp != 0) {
+                        polygons += ","
+                        latlngs += ","
+                    }
+                    polygons += "(("
+                    latlngs += "["
+                    rp.forEach(rp2 => {
+                        if (rp2.lat != null && !Number.isNaN(rp2.lat) && rp2.lng != null && !Number.isNaN(rp2.lng)) {
+                            if (index != 0) {
+                                latlngs += ","
+                                polygons += ","
+                            }
+
+                            latlngs += "{lat:" + rp2.lat + ",lng:" + rp2.lng + "}"
+                            polygons += rp2.lng + " " + rp2.lat
+
+                            latitude = rp2.lat
+                            longitude = rp2.lng
+
+                            index++
+                        }
+                    })
+                    latlngs += "]"
+                    polygons += "))"
+                    index_rp++
+                })
+                latlngs += "]"
+                polygons += ")"
+
+                r.latlngs = latlngs
+                r.polygon = polygons
+                r.polygonArray = null
+            })
+
+            uploadData = result
+            console.log(uploadData)
+            console.log(uploadData.filter(r => r.name == "Cilangkap")[0].latlngs)
+            // uploadJSON(uploadData.slice(start, end))
+            // console.log(result)
+            // console.log(JSON.stringify(result))
+        }
+        fileReader.readAsText(file)
+    }
+
+    async function extractGoogleCoords(plainText) {
+        let parser = new DOMParser()
+        let xmlDoc = parser.parseFromString(plainText, "text/xml")
+
+        let placeMarks = []
+
+        if (xmlDoc.documentElement.nodeName == "kml") {
+
+            for (const item of xmlDoc.getElementsByTagName('Placemark')) {
+
+                let googlePolygons = []
+                let provinsi = item.getElementsByTagName('SimpleData').item(1) != null ? item.getElementsByTagName('SimpleData').item(1).innerHTML : null
+                let kota = item.getElementsByTagName('SimpleData').item(2) != null ? item.getElementsByTagName('SimpleData').item(2).innerHTML : null
+                let kecamatan = item.getElementsByTagName('SimpleData').item(3) != null ? item.getElementsByTagName('SimpleData').item(3).innerHTML : null
+                let kelurahan = item.getElementsByTagName('SimpleData').item(4) != null ? item.getElementsByTagName('SimpleData').item(4).innerHTML : null
+                let polygons = item.getElementsByTagName('Polygon')
+                let markers = item.getElementsByTagName('Point')
+
+                let latitude = 0;
+                let longitude = 0;
+                /** POLYGONS PARSE **/
+                for (const polygon of polygons) {
+                    let coords = polygon.getElementsByTagName('coordinates')[0].childNodes[0].nodeValue.trim()
+                    let points = coords.split(" ")
+
+                    let googlePolygonsPaths = []
+                    for (const point of points) {
+                        let coord = point.split(",")
+                        googlePolygonsPaths.push({ lat: +coord[1], lng: +coord[0] })
+                        latitude = +coord[1]
+                        longitude = +coord[0]
+                    }
+                    googlePolygons.push(googlePolygonsPaths)
+                }
+
+                /** MARKER PARSE **/
+                for (const marker of markers) {
+                    var coords = marker.getElementsByTagName('coordinates')[0].childNodes[0].nodeValue.trim()
+                    let coord = coords.split(",")
+                    googleMarkers.push({ lat: +coord[1], lng: +coord[0] })
+                }
+                placeMarks.push({ uuidLocationCategory: "203", uuidLocationLevel: "4", uuidLocationType: "2", latlngs: "", polygon: "", name: kelurahan, latitude: latitude, longitude: longitude, additionalInfo: provinsi + "," + kota + "," + kecamatan + "," + kelurahan, polygonArray: googlePolygons })
+            }
+        } else {
+            throw "error while parsing"
+        }
+
+        return placeMarks;
+    }
+
+    function uploadJSON(json) {
+        console.log(end)
+        console.log(uploadData.length)
+        start += 200
+        end += 200
+        console.log(uploadData.slice(start, end))
+        if (uploadData.length > end) {
+            uploadJSON(uploadData.slice(start, end));
+        }
+        // var xhr = new XMLHttpRequest();
+        // var url = "http://localhost:8080/api/location/uploadGADMKML";
+        // xhr.open("POST", url, true);
+        // xhr.setRequestHeader("Content-Type", "application/json");
+        // xhr.onreadystatechange = function () {
+        //     if (xhr.readyState === 4 && xhr.status === 200) {
+        //         var json = JSON.parse(xhr.responseText);
+
+        //         console.log(end)
+        //         console.log(uploadData.length)
+        //         start += 200
+        //         end += 200
+        //         console.log(uploadData.slice(start, end))
+        //         if (uploadData.length > end) {
+        //             uploadJSON(uploadData.slice(start, end));
+        //         }
+        //     }
+        // };
+        // // console.log("Preparing Data...")
+        // var data = JSON.stringify(json);
+        // console.log("Sending Data...")
+        // xhr.send(data);
+    }
+</script>
