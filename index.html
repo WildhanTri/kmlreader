@@ -128,11 +128,8 @@
 <script>
     var file;
     var uploadData;
-    var start = 0;
-    var end = 200;
 
     $('#fileinput').change(function (e) {
-        console.log(e)
         file = e.target.files[0]
         parseDocument(file)
     });
@@ -195,14 +192,9 @@
                 r.latlngs = latlngs
                 r.polygon = polygons
                 r.polygonArray = null
+                console.log(r)
             })
-
-            uploadData = result
-            console.log(uploadData)
-            console.log(uploadData.filter(r => r.name == "Cilangkap")[0].latlngs)
-            // uploadJSON(uploadData.slice(start, end))
-            // console.log(result)
-            // console.log(JSON.stringify(result))
+            data = result
         }
         fileReader.readAsText(file)
     }
@@ -224,6 +216,17 @@
                 let kelurahan = item.getElementsByTagName('SimpleData').item(4) != null ? item.getElementsByTagName('SimpleData').item(4).innerHTML : null
                 let polygons = item.getElementsByTagName('Polygon')
                 let markers = item.getElementsByTagName('Point')
+
+                let name
+                if(kelurahan != null){
+                    name = kelurahan
+                }else if(kecamatan != null){
+                    name = kecamatan
+                }else if(kota != null){
+                    name = kota
+                }else if(provinsi != null){
+                    name = provinsi
+                }
 
                 let latitude = 0;
                 let longitude = 0;
@@ -248,45 +251,12 @@
                     let coord = coords.split(",")
                     googleMarkers.push({ lat: +coord[1], lng: +coord[0] })
                 }
-                placeMarks.push({ uuidLocationCategory: "203", uuidLocationLevel: "4", uuidLocationType: "2", latlngs: "", polygon: "", name: kelurahan, latitude: latitude, longitude: longitude, additionalInfo: provinsi + "," + kota + "," + kecamatan + "," + kelurahan, polygonArray: googlePolygons })
+                placeMarks.push({ latlngs: "", polygon: "", name: name, latitude: latitude, longitude: longitude, polygonArray: googlePolygons })
             }
         } else {
             throw "error while parsing"
         }
 
         return placeMarks;
-    }
-
-    function uploadJSON(json) {
-        console.log(end)
-        console.log(uploadData.length)
-        start += 200
-        end += 200
-        console.log(uploadData.slice(start, end))
-        if (uploadData.length > end) {
-            uploadJSON(uploadData.slice(start, end));
-        }
-        // var xhr = new XMLHttpRequest();
-        // var url = "http://localhost:8080/api/location/uploadGADMKML";
-        // xhr.open("POST", url, true);
-        // xhr.setRequestHeader("Content-Type", "application/json");
-        // xhr.onreadystatechange = function () {
-        //     if (xhr.readyState === 4 && xhr.status === 200) {
-        //         var json = JSON.parse(xhr.responseText);
-
-        //         console.log(end)
-        //         console.log(uploadData.length)
-        //         start += 200
-        //         end += 200
-        //         console.log(uploadData.slice(start, end))
-        //         if (uploadData.length > end) {
-        //             uploadJSON(uploadData.slice(start, end));
-        //         }
-        //     }
-        // };
-        // // console.log("Preparing Data...")
-        // var data = JSON.stringify(json);
-        // console.log("Sending Data...")
-        // xhr.send(data);
     }
 </script>
